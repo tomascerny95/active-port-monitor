@@ -1,5 +1,3 @@
-A dynamic overview of active services and ports running on your server.
-
 # Nginx Active Port Monitor (Default Site Config)
 
 This repository contains a replacement configuration file for the default Nginx server block (`/etc/nginx/sites-enabled/default`). Using an integrated Lua block, it dynamically monitors and lists active services running on your server.
