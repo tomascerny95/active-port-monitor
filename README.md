@@ -1,68 +1,95 @@
-# Nginx Active Port Monitor (Default Site Config)
+# Active Port Monitor
 
-This repository contains a replacement configuration file for the default Nginx server block (`/etc/nginx/sites-enabled/default`). Using an integrated Lua block, it dynamically monitors and lists active services running on your server.
+A lightweight, cross-platform active port monitor and network connection viewer with a modern web UI.
 
-When accessing your server's IP address on port 80, the script scans for open TCP ports and displays them in a clean, responsive dark-themed dashboard with direct connection links.
+Real-time monitoring of open ports, established network connections, listening services, and associated process information.
 
-## Prerequisites
+---
 
-For the Lua script inside the Nginx configuration to work, you need Nginx with Lua support and several standard system tools.
+## ✨ Features
+- **Real-Time Port Monitoring:** Live view of all listening ports and active TCP/UDP connections.
+- **Process Inspection:** Maps ports to process names, PIDs, and command-line arguments.
+- **Cross-Platform:** Runs seamlessly on Linux, Raspberry Pi, macOS, and Windows.
+- **Tailscale & Remote Access:** Web UI on port **9999** accessible from any device on your local network or Tailscale mesh.
+- **Search & Filtering:** Quickly search by port number, protocol, PID, or process name.
+- **Dark Mode UI:** Responsive, clean dark-themed web interface with low resource usage.
 
-### 1. Nginx with Lua Support
-On Debian/Ubuntu systems, you can install the necessary Lua modules by installing the `nginx-extras` package:
+---
+
+## 🚀 Quick Start on Raspberry Pi / Linux
+
+### Automated In-Place Installation (Recommended)
+
 ```bash
-sudo apt update
-sudo apt install nginx-extras
+# 1. Clone the repository
+cd ~
+git clone https://github.com/tomascerny95/active-port-monitor.git
+
+# 2. Enter directory, make script executable, and run installer
+cd active-port-monitor
+chmod +x setup_port_monitor.sh
+sudo bash ./setup_port_monitor.sh
 ```
-*(Alternatively, you can use OpenResty, which includes Lua support by default).*
 
-### 2. System Tools
-The script executes a shell pipeline to detect listening ports. The following utilities must be available in the system path:
-* `ss`, `grep`, `awk`, `cut`, `sort`
+The script automatically:
+- Detects your active system user.
+- Stops any existing instance before updating.
+- Pulls the latest commits from GitHub.
+- Sets up an isolated Python virtual environment (`venv`) and installs `psutil`, `fastapi`, and `uvicorn`.
+- Registers and starts the `port-monitor.service` background service.
 
-## Installation and Setup
+---
 
-You can use the provided Python script to generate and write the configuration directly, or perform the steps manually.
+## 🌐 Accessing the Web Dashboard
 
-### Option A: Using the Python Script
-Run the helper script to replace the default Nginx configuration:
+Open your web browser and navigate to:
+```text
+http://<DEVICE_IP>:9999
+```
+*(Also accessible via your Tailscale IP or `http://<hostname>.local:9999`).*
+
+---
+
+## 🔄 Updating to the Latest Version
+
+To update the monitor to the latest version at any time:
+
 ```bash
-sudo python3 generate_config.py
-```
-If run without `sudo`, the script will safely generate a local file named `default` in your current directory, which you can copy manually.
-
-### Option B: Manual Installation
-1. **Back up your existing default configuration:**
-   ```bash
-   sudo cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.bak
-   ```
-2. **Replace the content:**
-   Open `/etc/nginx/sites-enabled/default` with your preferred editor and paste the configuration.
-3. **Verify and restart Nginx:**
-   ```bash
-   sudo nginx -t
-   sudo systemctl restart nginx
-   ```
-
-## Customization
-
-You can customize service names and connection protocols directly in the configuration file under the `service_map` block:
-
-```lua
-local service_map = {
-    ["22"]    = { name = "SSH Access",            protocol = "ssh://" },
-    ["80"]    = { name = "Active Port Monitor",   protocol = "http://" },
-    -- Add your custom ports here
-}
+cd ~/active-port-monitor
+git fetch origin && git reset --hard origin/main && chmod +x setup_port_monitor.sh && sudo bash ./setup_port_monitor.sh
 ```
 
-If a port is active but not listed in the mapping, it defaults to `"Service on port <port>"` using `http://`.
+---
 
-## Security Considerations
+## 🖥️ Running on Windows
 
-* **Port Exposure:** Since this configuration listens on port 80 with `server_name _`, any visitor accessing your server's public IP address will see the list of active ports.
-* **Restricting Access:** To protect this data, consider securing the location block with Basic Authentication, or restrict access to your local network/trusted IP addresses:
-  ```nginx
-  allow 192.168.1.0/24; # Allow local network
-  deny all;             # Block everyone else
-  ```
+1. Clone or download the repository.
+2. Install Python 3.8+ and dependencies:
+   ```bash
+   pip install psutil fastapi uvicorn
+   ```
+3. Run the application:
+   ```bash
+   python active_port_monitor.py
+   ```
+4. Open `http://localhost:9999` in your browser.
+
+---
+
+## 🛠️ Service Management (systemd on Linux)
+
+```bash
+# Check service status
+sudo systemctl status port-monitor
+
+# Restart service
+sudo systemctl restart port-monitor
+
+# View live application logs
+journalctl -u port-monitor -f
+```
+
+---
+
+## 📄 License
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
