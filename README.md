@@ -1,58 +1,83 @@
 # Active Port Monitor
 
-A lightweight, cross-platform active port monitor and network connection viewer with a modern web UI.
+An ultra-lightweight, dynamic service portal and active port dashboard built directly into **Nginx** using the embedded **Lua engine** (`libnginx-mod-http-lua`).
 
-Real-time monitoring of open ports, established network connections, listening services, and associated process information.
+Runs on default HTTP port **80** with **zero background Python processes and zero extra RAM overhead**.
 
 ---
 
 ## ✨ Features
-- **Real-Time Port Monitoring:** Live view of all listening ports and active TCP/UDP connections.
-- **Process Inspection:** Maps ports to process names, PIDs, and command-line arguments.
-- **Cross-Platform:** Runs seamlessly on Linux, Raspberry Pi, macOS, and Windows.
-- **Tailscale & Remote Access:** Web UI on port **9999** accessible from any device on your local network or Tailscale mesh.
-- **Search & Filtering:** Quickly search by port number, protocol, PID, or process name.
-- **Dark Mode UI:** Responsive, clean dark-themed web interface with low resource usage.
+- **⚡ Zero Extra RAM Overhead:** No heavy Python, Node.js, or Docker daemons running in the background. Nginx serves the dashboard directly using an ultra-fast in-memory Lua script.
+- **🔄 Real-Time Dynamic Scanning:** Queries active listening ports on the host system (`ss -tnl`) on every page load. Start or stop any service on your server, hit refresh (`F5`), and it immediately updates!
+- **🌐 Central Server Hub (Port 80):** Operates on standard port 80—simply type `http://<IP>/` or `http://<hostname>.local/` without typing port numbers.
+- **🏷️ Smart Service Mapping:** Automatically resolves detected port numbers to human-readable names and correct connection protocols (`http://`, `ssh://`, `vnc://`).
+- **🔒 Tailscale & VPN Friendly:** Works seamlessly over local network (LAN), mDNS (`.local`), or Tailscale VPN.
+- **🎨 Modern Dark Web UI:** Clean, minimalist dark teal interface matching modern server dashboards.
 
 ---
 
 ## 🚀 Quick Start on Raspberry Pi / Linux
 
-### Automated In-Place Installation (Recommended)
+### Automated In-Place Installation
 
 ```bash
 # 1. Clone the repository
 cd ~
 git clone https://github.com/tomascerny95/active-port-monitor.git
 
-# 2. Enter directory, make script executable, and run installer
+# 2. Enter folder, make script executable, and run installer
 cd active-port-monitor
 chmod +x setup_port_monitor.sh
 sudo bash ./setup_port_monitor.sh
 ```
 
-The script automatically:
-- Detects your active system user.
-- Stops any existing instance before updating.
-- Pulls the latest commits from GitHub.
-- Sets up an isolated Python virtual environment (`venv`) and installs `psutil`, `fastapi`, and `uvicorn`.
-- Registers and starts the `port-monitor.service` background service.
+The script will automatically:
+- Pull the latest commits from GitHub.
+- Install `nginx` and `libnginx-mod-http-lua`.
+- Configure the Nginx default site configuration with the dynamic Lua handler.
+- Validate configuration syntax and restart Nginx.
 
 ---
 
-## 🌐 Accessing the Web Dashboard
+## 🌐 Accessing the Dashboard
 
 Open your web browser and navigate to:
 ```text
-http://<DEVICE_IP>:9999
+http://<DEVICE_IP>/
 ```
-*(Also accessible via your Tailscale IP or `http://<hostname>.local:9999`).*
+*(Also accessible via your Tailscale IP or `http://<hostname>.local/`).*
+
+---
+
+## 🛠️ Customizing Services & Ports
+
+To add, edit, or rename mapped services, edit the `service_map` table inside the `default` configuration file:
+
+```lua
+local service_map = {
+    ["22"]    = { name = "SSH Access",              protocol = "ssh://" },
+    ["80"]    = { name = "Active Port Monitor",     protocol = "http://" },
+    ["631"]   = { name = "Print Server (CUPS)",     protocol = "http://" },
+    ["1111"]  = { name = "HDMI Server",             protocol = "http://" },
+    ["2222"]  = { name = "Universal WoL Hub",       protocol = "http://" },
+    ["5000"]  = { name = "TC-Media Video Player",   protocol = "http://" },
+    ["5900"]  = { name = "VNC Remote Desktop",      protocol = "vnc://" },
+    ["8080"]  = { name = "qBittorrent WebUI",       protocol = "http://" },
+    ["8484"]  = { name = "Elegoo CC Family Hub",    protocol = "http://" },
+    ["9999"]  = { name = "Televize",                protocol = "http://" },
+}
+```
+
+After editing `default`, apply changes by re-running the installer:
+```bash
+sudo bash ./setup_port_monitor.sh
+```
 
 ---
 
 ## 🔄 Updating to the Latest Version
 
-To update the monitor to the latest version at any time:
+To fetch updates and re-apply Nginx configuration:
 
 ```bash
 cd ~/active-port-monitor
@@ -61,32 +86,20 @@ git fetch origin && git reset --hard origin/main && chmod +x setup_port_monitor.
 
 ---
 
-## 🖥️ Running on Windows
-
-1. Clone or download the repository.
-2. Install Python 3.8+ and dependencies:
-   ```bash
-   pip install psutil fastapi uvicorn
-   ```
-3. Run the application:
-   ```bash
-   python active_port_monitor.py
-   ```
-4. Open `http://localhost:9999` in your browser.
-
----
-
-## 🛠️ Service Management (systemd on Linux)
+## 🔧 Service Management (Nginx)
 
 ```bash
-# Check service status
-sudo systemctl status port-monitor
+# Check Nginx status
+sudo systemctl status nginx
 
-# Restart service
-sudo systemctl restart port-monitor
+# Test configuration syntax
+sudo nginx -t
 
-# View live application logs
-journalctl -u port-monitor -f
+# Reload configuration without dropping connections
+sudo systemctl reload nginx
+
+# View Nginx access & error logs
+sudo tail -f /var/log/nginx/error.log
 ```
 
 ---
