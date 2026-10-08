@@ -20,8 +20,8 @@ server {
                 ["9999"]  = { name = "Televize",                protocol = "http://" },
             }
 
-            -- Retrieve list of listening ports
-            local handle = io.popen("ss -tnl | grep LISTEN | awk '{print $4}' | cut -d: -f2 | sort -nu")
+            -- Retrieve list of listening ports (safe PATH ensures 'ss' is always found)
+            local handle = io.popen("export PATH=$PATH:/usr/sbin:/sbin; ss -tnl | grep LISTEN | awk '{print $4}' | cut -d: -f2 | sort -nu")
             local output = handle:read("*a")
             handle:close()
 
